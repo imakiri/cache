@@ -117,7 +117,10 @@ func (c *cache) Set(key string, value [][]byte) error {
 				copy(c.list[c.tail:], c.list[c.tail+1:])
 			}
 
-			c.tail = c.indexes[*tail.next.key]
+			if tail.next != nil {
+				c.tail = c.indexes[*tail.next.key]
+			}
+
 			delete(c.indexes, *tail.key)
 			tail.cutTail()
 		}

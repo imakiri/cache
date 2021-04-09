@@ -4,6 +4,10 @@ SCHEMA main /!V(?<release>\d+)(?:\.(?<commit>\d+))(?<noteList>[\s\S]+?)(?=\s!|$)
 SCHEMA main.notes /--([\s\S]+?)(?=\s--|$)/g
 DATA
 
+!V0.5:
+    --lru: Added tests
+    --lru: Bugfixes
+
 !V0.4:
     --lru: Bugfixes
 
