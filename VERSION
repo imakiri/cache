@@ -4,13 +4,18 @@ SCHEMA main /!V(?<release>\d+)(?:\.(?<commit>\d+))(?<noteList>[\s\S]+?)(?=\s!|$)
 SCHEMA main.notes /--([\s\S]+?)(?=\s--|$)/g
 DATA
 
-!V0.1
+!V0.2:
+    --lru: Added Cache interface
+    --lru: Added cache.Get, cache.Set, node.cutTail methods
+    --lru: Added NewCache constructor
+
+!V0.1:
     --Added VERSION
     --Added go.mod
     --Added lru package
     --lru: Added node, cache types
 
-!V0.0
+!V0.0:
     --Added README.md
     --Added LICENCE
     --Initial commit
