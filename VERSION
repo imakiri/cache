@@ -1,0 +1,16 @@
+VERSION 1.1
+PROJECT cache
+SCHEMA main /!V(?<release>\d+)(?:\.(?<commit>\d+))(?<noteList>[\s\S]+?)(?=\s!|$)/g
+SCHEMA main.notes /--([\s\S]+?)(?=\s--|$)/g
+DATA
+
+!V0.1
+    --Added VERSION
+    --Added go.mod
+    --Added lru package
+    --lru: Added node, cache types
+
+!V0.0
+    --Added README.md
+    --Added LICENCE
+    --Initial commit
