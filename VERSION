@@ -4,6 +4,9 @@ SCHEMA main /!V(?<release>\d+)(?:\.(?<commit>\d+))(?<noteList>[\s\S]+?)(?=\s!|$)
 SCHEMA main.notes /--([\s\S]+?)(?=\s--|$)/g
 DATA
 
+!V0.3:
+    --Bugfixes
+
 !V0.2:
     --lru: Added Cache interface
     --lru: Added cache.Get, cache.Set, node.cutTail methods

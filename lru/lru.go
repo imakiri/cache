@@ -43,7 +43,7 @@ type cache struct {
 	acceptNilValue bool
 }
 
-func (c cache) Get(key string) ([][]byte, bool) {
+func (c *cache) Get(key string) ([][]byte, bool) {
 	if key == "" {
 		return nil, false
 	}
@@ -81,7 +81,7 @@ func (c cache) Get(key string) ([][]byte, bool) {
 	return node.value, true
 }
 
-func (c cache) Set(key string, value [][]byte) error {
+func (c *cache) Set(key string, value [][]byte) error {
 	switch {
 	case key == "":
 		return erres.InvalidArgument.Extend(0).SetDescription("key string cannot be empty")
