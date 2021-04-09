@@ -106,6 +106,8 @@ func (c *cache) Set(key string, value [][]byte) error {
 
 		var size = uint(len(c.list))
 		if size == c.size {
+			var tail = c.list[c.tail]
+
 			var last = size - 1
 			switch {
 			case c.tail == last:
@@ -115,7 +117,6 @@ func (c *cache) Set(key string, value [][]byte) error {
 				copy(c.list[c.tail:], c.list[c.tail+1:])
 			}
 
-			var tail = c.list[c.tail]
 			c.tail = c.indexes[*tail.next.key]
 			delete(c.indexes, *tail.key)
 			tail.cutTail()
