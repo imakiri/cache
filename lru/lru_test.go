@@ -1,9 +1,15 @@
 package lru
 
 import (
-	"fmt"
+	"bytes"
 	"testing"
 )
+
+func TestUint(t *testing.T) {
+	var u uint64 = 0
+	u--
+	println(u)
+}
 
 func Test(t *testing.T) {
 	var cache, err = NewCache(1, false, false)
@@ -35,14 +41,14 @@ func Test(t *testing.T) {
 		if err = cache.Set(k, values[i]); err != nil {
 			t.Error(err)
 		}
-	}
-
-	for _, k := range keys {
 		var vls, ok = cache.Get(k)
-		if !ok && k == keys[6] {
+		if !ok {
 			t.Error("not ok")
 		}
 
-		fmt.Println(vls)
+		if !bytes.Equal(values[i][0], vls[0]) {
+			t.Error("not equal")
+		}
+
 	}
 }

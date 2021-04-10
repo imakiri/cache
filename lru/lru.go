@@ -29,7 +29,6 @@ type Cache interface {
 	Set(key string, value [][]byte) error
 }
 
-// Concurrent safe LRU cache
 type cache struct {
 	mutex *sync.Mutex
 
@@ -123,9 +122,11 @@ func (c *cache) Set(key string, value [][]byte) error {
 
 			delete(c.indexes, *tail.key)
 			tail.cutTail()
+			size--
 		}
 
 		c.list = append(c.list, node)
+		size++
 		c.indexes[key] = size - 1
 
 		switch {
