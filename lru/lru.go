@@ -12,9 +12,9 @@ type node struct {
 	value    [][]byte
 }
 
-func (n *node) cutTail() {
+func (n *node) drop() {
 	if n.previous != nil {
-		panic("critical internal error: cache/lru/node.wipe() can be performed only on tail node")
+		panic("cache/lru/node.drop() can be performed only on tail node")
 	}
 	if n.next != nil {
 		n.next.previous = nil
@@ -32,14 +32,78 @@ type Cache interface {
 type cache struct {
 	mutex *sync.Mutex
 
-	indexes map[string]uint
-	list    []*node
-	head    uint
-	tail    uint
+	indexes map[string]*node
+	head    *node
+	tail    *node
 
+	len            uint
 	size           uint
 	mutable        bool
 	acceptNilValue bool
+}
+
+func (c *cache) build(node *node) {
+	if node == nil {
+		panic("cache/lru/node.build()  node cannot be nil")
+	}
+
+	switch {
+	case c.len == 0:
+		c.tail = node
+		c.head = node
+	default:
+		c.head.next = node
+		node.previous = c.head
+
+		c.head = node
+	}
+
+	c.len++
+}
+
+func (c *cache) rebuild(node *node) {
+	if node == nil {
+		panic("cache/lru/node.rebuild()  node cannot be nil")
+	}
+
+	switch {
+	case node == c.head:
+		break
+	case node == c.tail:
+		if node.next == nil {
+			panic("cache/lru/node.rebuild() tail node cannot have .next == nil")
+		}
+		c.tail = node.next
+		node.next.previous = nil
+
+		node.previous = c.head
+		node.next = nil
+
+		c.head.next = node
+		c.head = node
+	default:
+		if node.next == nil || node.previous == nil {
+			panic("cache/lru/node.rebuild() node cannot have .next or .previous == nil")
+		}
+
+		node.previous.next = node.next
+		node.next.previous = node.previous
+
+		node.previous = c.head
+		node.next = nil
+
+		c.head.next = node
+		c.head = node
+	}
+}
+
+func (c *cache) dropTail() {
+	var tail = c.tail
+	c.tail = tail.next
+
+	delete(c.indexes, *tail.key)
+	tail.drop()
+	c.len--
 }
 
 func (c *cache) Get(key string) ([][]byte, bool) {
@@ -50,32 +114,12 @@ func (c *cache) Get(key string) ([][]byte, bool) {
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
 
-	var index, ok = c.indexes[key]
+	var node, ok = c.indexes[key]
 	if !ok {
 		return nil, false
 	}
 
-	var node = c.list[index]
-	switch {
-	case index == c.head:
-		break
-	case index == c.tail:
-		if node.next != nil {
-			c.tail = c.indexes[*node.next.key]
-			node.next.previous = nil
-		}
-		node.previous = c.list[c.head]
-		node.next = nil
-		c.list[c.head].next = node
-		c.head = index
-	default:
-		node.previous.next = node.next
-		node.previous = c.list[c.head]
-		node.next.previous = node.previous
-		node.next = nil
-		c.list[c.head].next = node
-		c.head = index
-	}
+	c.rebuild(node)
 
 	return node.value, true
 }
@@ -91,52 +135,25 @@ func (c *cache) Set(key string, value [][]byte) error {
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
 
-	var index, ok = c.indexes[key]
+	var _node, ok = c.indexes[key]
 	switch {
 	case ok && !c.mutable:
 		return erres.AlreadyExist.Extend(0).SetDescription("given key already exist")
 	case ok && c.mutable:
-		c.list[index].value = value
+		_node.value = value
+		c.rebuild(_node)
 		return nil
 	case !ok:
 		var node = new(node)
 		node.key = &key
 		node.value = value
+		c.indexes[key] = node
 
-		var size = uint(len(c.list))
-		if size == c.size {
-			var tail = c.list[c.tail]
-
-			var last = size - 1
-			switch {
-			case c.tail == last:
-				c.list[last] = nil
-				c.list = c.list[:c.tail]
-			case c.tail < last:
-				copy(c.list[c.tail:], c.list[c.tail+1:])
-			}
-
-			if tail.next != nil {
-				c.tail = c.indexes[*tail.next.key]
-			}
-
-			delete(c.indexes, *tail.key)
-			tail.cutTail()
-			size--
+		if c.len == c.size {
+			c.dropTail()
 		}
 
-		c.list = append(c.list, node)
-		size++
-		c.indexes[key] = size - 1
-
-		switch {
-		case index == 0:
-			break
-		default:
-			var head = c.list[c.head]
-			node.previous = head
-			head.next = node
-		}
+		c.build(node)
 	}
 
 	return nil
@@ -150,8 +167,7 @@ func NewCache(size uint, mutable bool, acceptNilValue bool) (Cache, error) {
 	var cache = new(cache)
 
 	cache.mutex = new(sync.Mutex)
-	cache.indexes = make(map[string]uint, size)
-	cache.list = make([]*node, 0, size)
+	cache.indexes = make(map[string]*node, size)
 
 	cache.size = size
 	cache.mutable = mutable
