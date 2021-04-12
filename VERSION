@@ -4,6 +4,15 @@ SCHEMA main /!V(?<release>\d+)(?:\.(?<commit>\d+))(?<noteList>[\s\S]+?)(?=\s!|$)
 SCHEMA main.notes /--([\s\S]+?)(?=\s--|$)/g
 DATA
 
+!V0.8:
+    --lru: Improved tests
+    --lru: Added general - lru implementation based on a Node interface
+    --lru: Deleted keyBytes.mutable
+    --lru: All keyBytes methods were reorganized
+    --lru: Added keyBytes.lead, keyBytes.delete methods
+    --lru: Reimplemented keyBytes.dropTail -> keyBytes.drop
+    --lru: cache -> keyBytes
+
 !V0.7:
     --lru: Improved tests
     --lru: Added cache.build, cache.rebuild, cache.dropTail methods
